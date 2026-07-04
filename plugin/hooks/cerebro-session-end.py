@@ -14,6 +14,8 @@ cwd's — a cwd-only auto-record would silently skip exactly where the work happ
 We read the session transcript to find every edited file, resolve each to its brain,
 union that with the cwd brain, and re-summarize stale in each distinct brain.
 """
+from __future__ import annotations
+
 import json
 import os
 import subprocess

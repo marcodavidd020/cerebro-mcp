@@ -1,6 +1,6 @@
 {
   "name": "cerebro",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Persistent code-knowledge memory: an MCP brain that caches a codebase's structure and summaries so AI sessions query it instead of re-reading files. Bundles the MCP server, cerebro-first subagents, and session hooks.",
   "author": { "name": "Marco Toledo", "url": "https://github.com/marcodavidd020/cerebro-code-memory" },
   "homepage": "https://github.com/marcodavidd020/cerebro-code-memory",
