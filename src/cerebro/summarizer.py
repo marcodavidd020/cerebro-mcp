@@ -29,6 +29,29 @@ def _claude_bin() -> str:
     return os.environ.get("CEREBRO_CLAUDE") or shutil.which("claude") or "claude"
 
 
+# Headless `claude -p` normally prints just the summary, but a misbehaving hook in
+# the user's environment (e.g. a plugin's UserPromptSubmit hook failing) can make it
+# emit a block/permission notice on stdout while still exiting 0 — which would then be
+# recorded verbatim as the file's "summary", poisoning the brain. This actually
+# happened: claude-mem's session-init hook wrote "operation blocked by hook … worker
+# unreachable" into three real summaries. Reject anything that smells like a
+# hook/permission notice instead of prose.
+_HOOK_NOISE = (
+    "blocked by hook",
+    "operation blocked",
+    "permission denied",
+    "worker unreachable",
+    "export path=",
+)
+
+
+def _is_valid_summary(text: str) -> bool:
+    if not text:
+        return False
+    low = text.lower()
+    return not any(marker in low for marker in _HOOK_NOISE)
+
+
 def summarize_one(config, rel: str, model: str) -> str | None:
     """Generate a summary for one file via `claude -p`. Returns None on failure."""
     abs_path = config.root / rel
@@ -49,7 +72,8 @@ def summarize_one(config, rel: str, model: str) -> str | None:
         return None
     if out.returncode != 0:
         return None
-    return out.stdout.strip() or None
+    summary = out.stdout.strip()
+    return summary if _is_valid_summary(summary) else None
 
 
 def select_central_missing(conn, limit: int, prefix: str | None = None) -> list[str]:

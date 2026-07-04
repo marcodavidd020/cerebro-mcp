@@ -65,3 +65,28 @@ def test_select_stale_skips_non_source(tmp_path, project):
     write(tmp_path, "README.md", "# hi changed\n")
     indexer.reindex(config, conn)
     assert summarizer.select_stale(conn, 10) == []  # .md has no language -> skipped
+
+
+def test_summarize_one_rejects_hook_error_output(tmp_path, project, monkeypatch):
+    """A misbehaving hook can make headless `claude -p` emit a block notice on stdout
+    while exiting 0 (this once poisoned 3 real summaries with claude-mem's hook error).
+    That must NOT be recorded as a summary; a genuine summary still passes through."""
+    config, conn = project
+    write(tmp_path, "a.py", "x = 1\n")
+
+    def fake_run(text):
+        class P:
+            returncode = 0
+            stdout = text
+            stderr = ""
+        return P()
+
+    monkeypatch.setattr(summarizer.subprocess, "run",
+                        lambda *a, **k: fake_run(
+                            "UserPromptSubmit operation blocked by hook:\n"
+                            "[export PATH=...]: claude-mem worker unreachable for 3 consecutive hooks."))
+    assert summarizer.summarize_one(config, "a.py", "m") is None
+
+    monkeypatch.setattr(summarizer.subprocess, "run",
+                        lambda *a, **k: fake_run("Defines the widget registry."))
+    assert summarizer.summarize_one(config, "a.py", "m") == "Defines the widget registry."

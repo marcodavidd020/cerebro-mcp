@@ -9,7 +9,7 @@
       "name": "cerebro",
       "source": "./plugin",
       "description": "MCP brain for codebases: caches structure + summaries so AI sessions query it instead of re-reading files. Bundles the MCP server, cerebro-first subagents, and session hooks.",
-      "version": "0.2.1"
+      "version": "0.2.2"
     }
   ]
 }
